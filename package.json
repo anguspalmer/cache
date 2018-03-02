@@ -1,0 +1,11 @@
+{
+  "name": "cache",
+  "private": true,
+  "main": "index.js",
+  "version": "0.1.0",
+  "dependencies": {
+    "misc": "git+ssh://git@git.ac3.com.au:7999/node/misc.git",
+    "mkdirp": "^0.5.1",
+    "sync": "git+ssh://git@git.ac3.com.au:7999/node/sync.git"
+  }
+}
