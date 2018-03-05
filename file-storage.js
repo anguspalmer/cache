@@ -1,5 +1,5 @@
 const path = require("path");
-const { root, bindMethods } = require("misc");
+const { root, bindMethods, md5, parseDuration } = require("misc");
 let cacheDir = path.join(root, "cache");
 const { promisify } = require("sync");
 const mkdirp = require("mkdirp");
@@ -116,23 +116,8 @@ module.exports = class FileStorage {
     }
     //exists! check expiry?
     if (expiry) {
-      //duration parser
       if (typeof expiry === "string") {
-        if (!/^(\d+)(d|h|m|s|ms)$/.test(expiry)) {
-          throw `invalid expiry: ${expiry}`;
-        }
-        let n = parseInt(RegExp.$1, 10);
-        switch (RegExp.$2) {
-          case "d":
-            n *= 24;
-          case "h":
-            n *= 60;
-          case "m":
-            n *= 60;
-          case "s":
-            n *= 1000;
-        }
-        expiry = n;
+        expiry = parseDuration(expiry);
       }
       let age = +new Date() - mtime;
       if (age > expiry) {
@@ -150,5 +135,28 @@ module.exports = class FileStorage {
       return s.size;
     } catch (_) {}
     return null;
+  }
+
+  wrap(scope, key, expiry) {
+    let fn = scope[key];
+    if (typeof fn !== "function") {
+      throw `Expected function`;
+    } else if (!/AsyncFunction/.test(fn.constructor)) {
+      throw `Expected async function`;
+    }
+    let n = parseDuration(expiry);
+    return async (...args) => {
+      let j = fn.name + "-" + md5(JSON.stringify(args));
+      let result = await this.get(j, n);
+      if (result === null) {
+        //not cached, run function
+        result = await fn.call(scope, ...args);
+        //got result, cache
+        if (result !== null) {
+          await this.put(j, result);
+        }
+      }
+      return result;
+    };
   }
 };
