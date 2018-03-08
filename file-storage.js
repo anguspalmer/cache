@@ -1,6 +1,5 @@
 const path = require("path");
-const { root, bindMethods, md5, parseDuration } = require("misc");
-let cacheDir = path.join(root, "cache");
+const { dataDir, bindMethods, md5, parseDuration } = require("misc");
 const { promisify } = require("sync");
 const mkdirp = require("mkdirp");
 const fs = require("fs");
@@ -9,6 +8,8 @@ const stat = promisify(fs.stat);
 const read = promisify(fs.readFile);
 const write = promisify(fs.writeFile);
 const remove = promisify(fs.unlink);
+
+let cacheDir = path.join(dataDir, "cache");
 
 module.exports = class FileStorage {
   constructor(base, opts = {}) {
