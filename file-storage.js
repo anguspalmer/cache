@@ -9,15 +9,21 @@ const read = promisify(fs.readFile);
 const write = promisify(fs.writeFile);
 const remove = promisify(fs.unlink);
 
-let cacheDir = path.join(dataDir, "cache");
+let defaultBaseDir = path.join(dataDir, "data");
 
 module.exports = class FileStorage {
   constructor(base, opts = {}) {
     bindMethods(this);
     this.json = opts.json !== false;
     this.gzip = opts.gzip !== false;
-    let baseDir =
-      typeof base === "string" ? path.join(cacheDir, base) : cacheDir;
+    let baseDir = defaultBaseDir;
+    if (typeof base === "string") {
+      if (base.startsWith("/")) {
+        baseDir = base;
+      } else {
+        baseDir = path.join(defaultBaseDir, base);
+      }
+    }
     mkdirp.sync(baseDir);
     this.base = baseDir;
   }
@@ -95,7 +101,8 @@ module.exports = class FileStorage {
         //have file, but expired
         //best-effort delete
         remove(filepath).catch(err => {
-          if (err) console.log("file-expired", filepath, err);
+          if (err)
+            console.log("<<WARN>> file expire remove failed", filepath, err);
         });
       }
       return null;
