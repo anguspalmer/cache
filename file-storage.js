@@ -9,19 +9,17 @@ const read = promisify(fs.readFile);
 const write = promisify(fs.writeFile);
 const remove = promisify(fs.unlink);
 
-let defaultBaseDir = path.join(dataDir, "data");
-
 module.exports = class FileStorage {
   constructor(base, opts = {}) {
     bindMethods(this);
     this.json = opts.json !== false;
     this.gzip = opts.gzip !== false;
-    let baseDir = defaultBaseDir;
+    let baseDir = dataDir;
     if (typeof base === "string") {
       if (base.startsWith("/")) {
         baseDir = base;
       } else {
-        baseDir = path.join(defaultBaseDir, base);
+        baseDir = path.join(dataDir, base);
       }
     }
     mkdirp.sync(baseDir);
