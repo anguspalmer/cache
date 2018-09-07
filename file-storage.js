@@ -151,7 +151,7 @@ module.exports = class FileStorage {
       throw `Expected async function`;
     }
     let n = parseDuration(expiry);
-    return async (...args) => {
+    let newFn = async (...args) => {
       let j = fn.name + "-" + md5(JSON.stringify(args));
       let result = await this.get(j, n);
       if (result === null) {
@@ -164,5 +164,7 @@ module.exports = class FileStorage {
       }
       return result;
     };
+    scope[key] = newFn;
+    return newFn;
   }
 };
