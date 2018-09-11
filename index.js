@@ -1,2 +1,3 @@
-exports.cache = require("./cache");
-exports.FileStorage = require("./file-storage");
+const FileStorage = require("./file-storage");
+exports.FileStorage = FileStorage;
+exports.cache = new FileStorage("default");

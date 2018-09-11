@@ -13,7 +13,7 @@ module.exports = class FileStorage {
   constructor(base, opts = {}) {
     bindMethods(this);
     this.json = opts.json !== false;
-    this.gzip = opts.gzip !== false;
+    //TODO this.gzip = opts.gzip !== false;
     let baseDir = dataDir;
     if (typeof base === "string") {
       if (base.startsWith("/")) {
@@ -26,56 +26,33 @@ module.exports = class FileStorage {
     this.base = baseDir;
   }
 
-  async list(dir) {
-    let base = typeof dir === "string" ? path.join(this.base, dir) : this.base;
-    let files = await readdir(base);
-    return files;
+  async list() {
+    return await readdir(this.base);
   }
 
   async remove(id) {
-    let filepath = path.join(this.base, id);
-    if (this.json) {
-      if (!/\.json$/.test(filepath)) {
-        filepath += ".json";
-      }
-    }
-    return await remove(filepath);
+    return await remove(this.join(id));
   }
 
-  async put(id, data) {
-    if (this.json) {
+  async clear() {
+    for (let id of await this.list()) {
+      await this.remove(id);
+    }
+  }
+
+  async put(id, data, raw = false) {
+    if (!raw && this.json) {
       data = JSON.stringify(data, null, 2);
-      if (!/\.json$/.test(id)) {
-        id += ".json";
-      }
     }
-    return await this.putRaw(id, data);
-  }
-
-  async get(id, expiry) {
-    if (this.json && !/\.json$/.test(id)) {
-      id += ".json";
-    }
-    let data = await this.getRaw(id, expiry);
-    if (!data) {
-      return null;
-    }
-    if (this.json) {
-      data = JSON.parse(data);
-    }
-    return data;
-  }
-
-  async putRaw(id, data) {
     if (!(data instanceof Buffer) && typeof data !== "string") {
       throw "invalid data";
     }
-    let filepath = path.join(this.base, id);
+    let filepath = this.join(id);
     return await write(filepath, data);
   }
 
-  async getRaw(id, expiry) {
-    let filepath = path.join(this.base, id);
+  async get(id, expiry, raw = false) {
+    let filepath = this.join(id);
     let result = await this.has(id, expiry);
     if (!result) {
       if (result === null) {
@@ -88,11 +65,26 @@ module.exports = class FileStorage {
       return null;
     }
     //load from cache
-    return await read(filepath);
+    let data = await read(filepath);
+    if (!data) {
+      return null;
+    }
+    if (!raw && this.json) {
+      data = JSON.parse(data);
+    }
+    return data;
+  }
+
+  async putRaw(id, data) {
+    return await this.put(id, data, true);
+  }
+
+  async getRaw(id, expiry) {
+    return await this.get(id, expiry, true);
   }
 
   async getStream(id, expiry) {
-    let filepath = path.join(this.base, id);
+    let filepath = this.join(id);
     let result = await this.has(id, expiry);
     if (!result) {
       if (result === null) {
@@ -108,17 +100,23 @@ module.exports = class FileStorage {
     return fs.createReadStream(filepath);
   }
 
-  async has(id, expiry) {
-    let filepath = path.join(this.base, id);
-    let mtime;
+  async mtime(id) {
+    let filepath = this.join(id);
     try {
       let s = await stat(filepath);
-      mtime = s.mtime;
+      return s.mtime;
     } catch (err) {
-      if (err.code === "ENOENT") {
-        return false; //doesn't exist;
+      if (err.code !== "ENOENT") {
+        throw err;
       }
-      throw err;
+    }
+    return null;
+  }
+
+  async has(id, expiry) {
+    let mtime = await this.mtime(id);
+    if (mtime === null) {
+      return false; //doesn't exist;
     }
     //exists! check expiry?
     if (expiry) {
@@ -135,12 +133,18 @@ module.exports = class FileStorage {
   }
 
   async sizeOf(id) {
-    let filepath = path.join(this.base, id);
     try {
-      let s = await stat(filepath);
+      let s = await stat(this.join(id));
       return s.size;
     } catch (_) {}
     return null;
+  }
+
+  join(id) {
+    if (this.json && !/\.json$/.test(id)) {
+      id += ".json";
+    }
+    return path.join(this.base, id);
   }
 
   wrap(scope, key, expiry) {
