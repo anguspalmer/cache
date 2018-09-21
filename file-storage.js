@@ -21,7 +21,6 @@ module.exports = class FileStorage {
     }
     mkdirp.sync(base);
     this.base = base;
-    console.log("[fs] construct:", base);
   }
 
   sub(dir, opts) {
