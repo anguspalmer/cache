@@ -1,6 +1,6 @@
 const path = require("path");
-const { dataDir, bindMethods, md5, parseDuration } = require("misc");
-const { promisify } = require("sync");
+const { bindMethods, md5, parseDuration } = require("misc");
+const { promisify, map } = require("sync");
 const mkdirp = require("mkdirp");
 const fs = require("fs");
 const readdir = promisify(fs.readdir);
@@ -14,20 +14,49 @@ module.exports = class FileStorage {
     bindMethods(this);
     this.json = opts.json !== false;
     //TODO this.gzip = opts.gzip !== false;
-    let baseDir = dataDir;
-    if (typeof base === "string") {
-      if (base.startsWith("/")) {
-        baseDir = base;
-      } else {
-        baseDir = path.join(dataDir, base);
-      }
+    if (!base || !base.startsWith("/")) {
+      throw new Error(
+        `Absolute path to base directory required, got "${base || ""}"`
+      );
     }
-    mkdirp.sync(baseDir);
-    this.base = baseDir;
+    mkdirp.sync(base);
+    this.base = base;
+    console.log("[fs] construct:", base);
+  }
+
+  sub(dir, opts) {
+    if (!dir || dir.startsWith("/")) {
+      `Relative path to base directory required, got "${dir || ""}"`;
+    }
+    const newBase = path.join(this.base, dir);
+    if (!opts) {
+      opts = {
+        json: this.json
+      };
+    }
+    return new FileStorage(newBase, opts);
   }
 
   async list() {
-    return await readdir(this.base);
+    const rawNames = await readdir(this.base);
+    const names = rawNames.filter(name => {
+      if (name.startsWith(".")) {
+        return false;
+      }
+      if (this.json && !name.endsWith(".json")) {
+        return false;
+      }
+      return true;
+    });
+    const ids = await map(12, names, async name => {
+      const p = path.join(this.base, name);
+      const s = await stat(p);
+      if (this.json) {
+        name = name.replace(/\.json$/, "");
+      }
+      return s.isFile() ? name : null;
+    });
+    return ids.filter(name => name !== null);
   }
 
   async remove(id) {
