@@ -4,7 +4,8 @@
   "main": "index.js",
   "version": "0.1.0",
   "scripts": {
-    "test": "mocha --recursive --bail --reporter list"
+    "test": "mocha --recursive --bail --reporter list",
+    "watch": "mocha --recursive --bail --reporter list --watch"
   },
   "dependencies": {
     "misc": "git+ssh://git@git.ac3.com.au:7999/node/misc.git",

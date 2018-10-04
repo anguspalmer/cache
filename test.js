@@ -60,4 +60,18 @@ describe("#cache", () => {
       expect(r).to.be.null;
     });
   });
+
+  describe("#date", () => {
+    before(async () => {
+      await cache.clear();
+    });
+    it("put date", async () => {
+      await cache.put("foo", { t: new Date() });
+    });
+    it("get date", async () => {
+      let r = await cache.get("foo");
+      expect(r).not.to.be.null;
+      expect(r.t).to.be.an.instanceof(Date);
+    });
+  });
 });

@@ -70,7 +70,7 @@ module.exports = class FileStorage {
 
   async put(id, data, raw = false) {
     if (!raw && this.json) {
-      data = JSON.stringify(data, null, 2);
+      data = jsonStringify(data);
     }
     if (!(data instanceof Buffer) && typeof data !== "string") {
       throw "invalid data";
@@ -98,7 +98,7 @@ module.exports = class FileStorage {
       return null;
     }
     if (!raw && this.json) {
-      data = JSON.parse(data);
+      data = jsonParse(data);
     }
     return data;
   }
@@ -200,3 +200,20 @@ module.exports = class FileStorage {
     return newFn;
   }
 };
+
+//custom JSON stringify
+function jsonStringify(obj) {
+  return JSON.stringify(obj, null, 2);
+}
+
+const dateTimeUTC = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
+
+//custom JSON parse
+function jsonParse(str) {
+  return JSON.parse(str, (_, v) => {
+    if (typeof v === "string" && dateTimeUTC.test(v)) {
+      return new Date(v);
+    }
+    return v;
+  });
+}
