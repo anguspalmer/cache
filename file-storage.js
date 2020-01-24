@@ -14,7 +14,7 @@ module.exports = class FileStorage {
     bindMethods(this);
     this.json = opts.json !== false;
     //TODO this.gzip = opts.gzip !== false;
-    if (!base || !base.startsWith("/")) {
+    if (!base || !(base.startsWith("/") || /^[A-Z]:\\*./i.test(base))) {
       throw new Error(
         `Absolute path to base directory required, got "${base || ""}"`
       );
