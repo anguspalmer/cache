@@ -8,9 +8,9 @@
     "watch": "mocha --recursive --bail --reporter list --watch"
   },
   "dependencies": {
-    "misc": "git+ssh://git@git.ac3.com.au:7999/node/misc.git",
+    "misc": "git://github.com.au/anguspalmer/misc.git",
     "mkdirp": "^0.5.1",
-    "sync": "git+ssh://git@git.ac3.com.au:7999/node/sync.git"
+    "sync": "git://github.com/anguspalmer/sync.git"
   },
   "devDependencies": {
     "chai": "^4.1.2",
