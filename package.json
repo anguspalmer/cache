@@ -8,7 +8,7 @@
     "watch": "mocha --recursive --bail --reporter list --watch"
   },
   "dependencies": {
-    "misc": "git://github.com.au/anguspalmer/misc.git",
+    "misc": "git://github.com/anguspalmer/misc.git",
     "mkdirp": "^0.5.1",
     "sync": "git://github.com/anguspalmer/sync.git"
   },
